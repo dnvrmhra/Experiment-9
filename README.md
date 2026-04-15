@@ -1,70 +1,146 @@
-# Getting Started with Create React App
+# Experiment 9: Dockerization and CI/CD Pipeline for React Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+---------------------------------------------------------------------
 
-## Available Scripts
+## Tech Stack
 
-In the project directory, you can run:
+* Frontend: React (v18)
+* Containerization: Docker
+* Web Server: Nginx (Alpine)
+* CI/CD: GitHub Actions
+* Registry: Docker Hub
 
-### `npm start`
+----------------------------------------------------------------------
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Project Structure
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```
+react-app/
+│
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml
+│
+├── public/
+├── src/
+├── Dockerfile
+├── .dockerignore
+├── package.json
+└── README.md
+```
 
-### `npm test`
+----------------------
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Dockerization
 
-### `npm run build`
+### Multi-Stage Docker Build
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+The application uses a multi-stage Docker build process:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+1. Build Stage
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+   * Uses Node.js to install dependencies and build the React application
 
-### `npm run eject`
+2. Production Stage
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+   * Uses Nginx to serve the optimized static build
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Dockerfile
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```
+# Stage 1: Build React app
+FROM node:18 AS build
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
 
-## Learn More
+COPY . .
+RUN npm run build
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+# Stage 2: Serve using Nginx
+FROM nginx:alpine
+COPY --from=build /app/build /usr/share/nginx/html
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Running Locally with Docker
 
-### Analyzing the Bundle Size
+### Build Image
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```
+docker build -t dnvrmhra/react-app .
+```
 
-### Making a Progressive Web App
+### Run Container
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```
+docker run -p 8080:80 dnvrmhra/react-app
+```
 
-### Advanced Configuration
+Access the application at:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```
+http://localhost:8080
+```
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## CI/CD Pipeline
 
-### `npm run build` fails to minify
+### Workflow Description
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+The CI/CD pipeline is configured using GitHub Actions and is triggered on every push to the main branch.
+
+### Pipeline Steps
+
+1. Checkout source code
+2. Login to Docker Hub using secrets
+3. Build Docker image
+4. Tag image with latest and commit SHA
+5. Push image to Docker Hub
+
+### Workflow File Location
+
+```
+.github/workflows/ci-cd.yml
+```
+
+---
+
+## GitHub Secrets Configuration
+
+The following secrets are required:
+
+* DOCKER_USERNAME
+* DOCKER_PASSWORD
+
+These are used for authenticating with Docker Hub during the pipeline execution.
+
+---
+
+## Expected Output
+
+* Docker image successfully built and pushed
+* Image available on Docker Hub
+* Tags include:
+
+  * latest
+  * commit SHA
+* GitHub Actions workflow completes successfully
+
+---
+
+## Conclusion
+
+This project successfully demonstrates end-to-end containerization and CI/CD automation for a React application. It ensures efficient deployment, version control of images, and streamlined development workflow using industry-standard tools.
+
+---
+
+## Name: Daanveer Mehra
+## UID: 24BAI70059
+## Section: 24AML-2(A)
